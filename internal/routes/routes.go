@@ -20,8 +20,8 @@ func SetupRouter(
 		auth.POST("/login", authHandler.Login)
 
 		// Password reset
-		auth.POST("/password-reset/request", passwordResetHandler.RequestReset)   // sends otp
-		auth.GET("/password-reset/confirm", passwordResetHandler.ConfirmReset)    // verify otp 
+		auth.POST("/password-reset/request", passwordResetHandler.RequestReset)  	// sends otp
+		auth.GET("/password-reset/confirm", passwordResetHandler.ConfirmReset)    	// verify otp 
 		auth.POST("/password-reset/submit", passwordResetHandler.SubmitNewPassword) // sets new password
 	}
 
