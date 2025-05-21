@@ -4,14 +4,18 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+
 	"github.com/joho/godotenv"
 )
 
 type Config struct {
-	AppEnv    string
-	Port      int
-	DBDSN     string
-	JWTSecret string
+	BASE_URL	string
+	DBDSN         string
+	JWTSecret     string
+	SMTP_HOST     string
+	SMTP_PORT     int
+	SMTP_ACCOUNT  string
+	SMTP_PASSWORD string
 }
 
 func LoadConfig() (*Config, error) {
@@ -23,17 +27,20 @@ func LoadConfig() (*Config, error) {
 		}
 	}
 
-	// Parse port to integer
-	port, err := strconv.Atoi(getEnv("PORT", "8080"))
+	// Parse SMTP_PORT
+	smtpPort, err := strconv.Atoi(getEnv("SMTP_PORT", "587"))
 	if err != nil {
-		return nil, fmt.Errorf("invalid PORT value: %v", err)
+		return nil, fmt.Errorf("invalid SMTP_PORT value: %v", err)
 	}
 
 	return &Config{
-		AppEnv:    getEnv("APP_ENV", "development"),
-		Port:      port,
-		DBDSN:     getEnv("DB_DSN", "file:urls.db"),
-		JWTSecret: getEnv("JWT_SECRET", ""),
+		BASE_URL:      getEnv("BASE_URL", fmt.Sprintf("http://localhost:8080")),
+		DBDSN:         getEnv("DB_DSN", "file:urls.db"),
+		JWTSecret:     getEnv("JWT_SECRET", ""),
+		SMTP_HOST:     getEnv("SMTP_HOST", ""),
+		SMTP_PORT:     smtpPort,
+		SMTP_ACCOUNT:  getEnv("SMTP_ACCOUNT", ""),
+		SMTP_PASSWORD: getEnv("SMTP_PASSWORD", ""),
 	}, nil
 }
 

@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"time"
 	"database/sql"
+
+	"github.com/google/uuid"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -88,8 +90,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	// Generate JWT
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": user.ID,
-		"exp":     time.Now().Add(time.Hour * 24).Unix(),
+		"sub": user.ID,
+		"exp": time.Now().Add(time.Hour * 24).Unix(),
+		"jti": uuid.New().String(),
+		"scope": "login",
 	})
 
 	tokenString, err := token.SignedString([]byte(h.JWTSecret))
@@ -103,8 +107,21 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 // Logout
 func (h *AuthHandler) Logout(c *gin.Context) {
-	
-	//
+	userID := c.MustGet("user_id") // From middleware
+
+	// Invalidate the token
+	invalidToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": userID,
+		"jti": "invalid",
+		"exp": time.Now().Add(-time.Hour).Unix(), // Expired token
+		"scope": "logout",
+	})
+
+	_, err := invalidToken.SignedString([]byte(h.JWTSecret))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to invalidate token"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out"})
 }

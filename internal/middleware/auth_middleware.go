@@ -25,23 +25,20 @@ func JWTAuthMiddleware(secret string) gin.HandlerFunc {
 		}
 
 		// Parse and validate token
-        token, err := jwt.ParseWithClaims(
-            tokenString,
-            &CustomClaims{},
-            func(token *jwt.Token) (interface{}, error) {
-                return []byte(secret), nil
-            },
-        )
-
+        token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+    	return []byte(secret), nil
+})
 		if err != nil || !token.Valid {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			return
 		}
 
 		// Attach user ID to context
-        if claims, ok := token.Claims.(*CustomClaims); ok {
-            c.Set("user_id", claims.UserID) // Now properly typed as int
-        }
+        if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+    		if sub, ok := claims["sub"].(float64); ok { // note: JSON numbers are float64
+        		c.Set("user_id", int(sub))
+    		}
+		}
 
 		c.Next()
 	}

@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	charset   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	shortKeyCharset   = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	keyLength = 6
 )
 
@@ -27,7 +27,7 @@ func generateShortKey() string {
 	rand.New(rand.NewSource(time.Now().UnixNano()))
 	shortKey := make([]byte, keyLength)
 	for i := range shortKey {
-		shortKey[i] = charset[rand.Intn(len(charset))]
+		shortKey[i] = shortKeyCharset[rand.Intn(len(shortKeyCharset))]
 	}
 	return string(shortKey)
 }
@@ -58,7 +58,7 @@ func (h *URLHandler) ShortenURL(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"short_url": fmt.Sprintf("http://localhost:8080/%s", shortKey),
+		"short_url": fmt.Sprintf("%s/%s", config.BaseURL, shortKey),
 	})
 }
 
@@ -93,7 +93,7 @@ func (h *URLHandler) ListURLs(c *gin.Context) {
 	for rows.Next() {
 		var u models.URL
 		if err := rows.Scan(&u.ShortKey, &u.OriginalURL); err == nil {
-			u.ShortKey = fmt.Sprintf("http://localhost:8080/%s", u.ShortKey)
+			u.ShortKey = fmt.Sprintf("%s/%s", config.BaseURL, u.ShortKey)
 			urls = append(urls, u)
 		}
 	}

@@ -32,11 +32,13 @@ func main() {
 	// Initialize handlers
 	authHandler := handlers.NewAuthHandler(db, cfg.JWTSecret)
 	urlHandler := handlers.NewURLHandler(db)
+	resetHandler := handlers.NewPasswordResetHandler(db)
 
 	// Setup routes
 	r := routes.SetupRouter(
 		urlHandler,
 		authHandler,
+		resetHandler,
 		middleware.JWTAuthMiddleware(cfg.JWTSecret),
 	)
 
