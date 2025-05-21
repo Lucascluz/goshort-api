@@ -11,7 +11,7 @@ import (
 type Config struct {
 	BASE_URL	string
 	DBDSN         string
-	JWTSecret     string
+	JWT_SECRET    string
 	SMTP_HOST     string
 	SMTP_PORT     int
 	SMTP_ACCOUNT  string
@@ -19,12 +19,10 @@ type Config struct {
 }
 
 func LoadConfig() (*Config, error) {
-	// Load .env file in development
-	if os.Getenv("APP_ENV") == "" || os.Getenv("APP_ENV") == "development" {
-		err := godotenv.Load()
-		if err != nil {
-			return nil, fmt.Errorf("error loading .env file: %v", err)
-		}
+	// Load .env file
+	err := godotenv.Load()
+	if err != nil {
+		return nil, fmt.Errorf("error loading .env file: %v", err)
 	}
 
 	// Parse SMTP_PORT
@@ -34,9 +32,9 @@ func LoadConfig() (*Config, error) {
 	}
 
 	return &Config{
-		BASE_URL:      getEnv("BASE_URL", fmt.Sprintf("http://localhost:8080")),
+		BASE_URL:      getEnv("BASE_URL", fmt.Sprintf("localhost:8080")),
 		DBDSN:         getEnv("DB_DSN", "file:urls.db"),
-		JWTSecret:     getEnv("JWT_SECRET", ""),
+		JWT_SECRET:     getEnv("JWT_SECRET", ""),
 		SMTP_HOST:     getEnv("SMTP_HOST", ""),
 		SMTP_PORT:     smtpPort,
 		SMTP_ACCOUNT:  getEnv("SMTP_ACCOUNT", ""),

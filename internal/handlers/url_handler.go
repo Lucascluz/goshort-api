@@ -6,8 +6,11 @@ import (
 	"math/rand"
 	"net/http"
 	"time"
+	"log"
+
 	"github.com/gin-gonic/gin"
 	"goshort-api/internal/models"
+	"goshort-api/configs"
 )
 
 const (
@@ -57,8 +60,14 @@ func (h *URLHandler) ShortenURL(c *gin.Context) {
 		return
 	}
 
+	// Load configuration
+	cfg, err := configs.LoadConfig()
+	if err != nil {
+		log.Fatal("Failed to load config:", err)
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"short_url": fmt.Sprintf("%s/%s", config.BaseURL, shortKey),
+		"short_url": fmt.Sprintf("%s/%s", cfg.BASE_URL, shortKey),
 	})
 }
 
@@ -82,6 +91,12 @@ func (h *URLHandler) RedirectURL(c *gin.Context) {
 
 // ListURLs handles the request to list all shortened URLs
 func (h *URLHandler) ListURLs(c *gin.Context) {
+	// Load configuration
+	cfg, err := configs.LoadConfig()
+	if err != nil {
+		log.Fatal("Failed to load config:", err)
+	}
+
 	rows, err := h.DB.Query("SELECT short_key, original_url FROM url_keys")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao buscar URLs"})
@@ -93,7 +108,7 @@ func (h *URLHandler) ListURLs(c *gin.Context) {
 	for rows.Next() {
 		var u models.URL
 		if err := rows.Scan(&u.ShortKey, &u.OriginalURL); err == nil {
-			u.ShortKey = fmt.Sprintf("%s/%s", config.BaseURL, u.ShortKey)
+			u.ShortKey = fmt.Sprintf("%s/%s", cfg.BASE_URL, u.ShortKey)
 			urls = append(urls, u)
 		}
 	}

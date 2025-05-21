@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"fmt"
 	"goshort-api/configs"
 	"goshort-api/internal/database"
 	"goshort-api/internal/handlers"
@@ -18,8 +17,8 @@ func main() {
 	}
 
 	// Validate JWT secret in production
-	if cfg.AppEnv == "production" && cfg.JWTSecret == "" {
-		log.Fatal("JWT_SECRET is required in production")
+	if cfg.JWT_SECRET == "" {
+		log.Fatal("JWT_SECRET is required!")
 	}
 
 	// Initialize database
@@ -30,7 +29,7 @@ func main() {
 	defer db.Close()
 
 	// Initialize handlers
-	authHandler := handlers.NewAuthHandler(db, cfg.JWTSecret)
+	authHandler := handlers.NewAuthHandler(db, cfg.JWT_SECRET)
 	urlHandler := handlers.NewURLHandler(db)
 	resetHandler := handlers.NewPasswordResetHandler(db)
 
@@ -39,11 +38,10 @@ func main() {
 		urlHandler,
 		authHandler,
 		resetHandler,
-		middleware.JWTAuthMiddleware(cfg.JWTSecret),
+		middleware.JWTAuthMiddleware(cfg.JWT_SECRET),
 	)
 
 	// Start server
-	addr := fmt.Sprintf(":%d", cfg.Port)
-	log.Printf("Server running on port %d in %s mode", cfg.Port, cfg.AppEnv)
-	log.Fatal(r.Run(addr))
+	log.Printf("Server running on %s", cfg.BASE_URL)
+	log.Fatal(r.Run(cfg.BASE_URL))
 }

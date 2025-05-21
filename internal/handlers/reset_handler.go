@@ -10,9 +10,11 @@ import (
 	"math/rand"
 	"golang.org/x/crypto/bcrypt"
 
+
 	"github.com/gin-gonic/gin"
 	"gopkg.in/gomail.v2"
 
+	"github.com/google/uuid"
 	"goshort-api/configs"
 )
 
@@ -117,7 +119,7 @@ func (h *PasswordResetHandler) ConfirmReset(c *gin.Context) {
 
 	var storedOTP string
 	var expiresAt time.Time
-	err = h.DB.QueryRow("SELECT otp, expires_at FROM otps WHERE user_id = ? AND used = FALSE AND expired = FALSE", userID).Scan(&storedOTP, &expiresAt)
+	err = h.DB.QueryRow("SELECT otp, expires_at FROM otps WHERE user_id = ? AND used = FALSE", userID).Scan(&storedOTP, &expiresAt)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "No valid OTP found"})
 		return
@@ -132,7 +134,7 @@ func (h *PasswordResetHandler) ConfirmReset(c *gin.Context) {
 
 	// Save token to DB with expiration (e.g., 15 mins)
 	_, err = h.DB.Exec(`
-		INSERT INTO password_resets (user_id, reset_token, expires_at)
+		INSERT INTO password_resets (user_id, token, expires_at)
 		VALUES (?, ?, ?)
 	`, userID, resetToken, time.Now().Add(15*time.Minute))
 
@@ -143,7 +145,7 @@ func (h *PasswordResetHandler) ConfirmReset(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "OTP verified successfully",
-		"reset_token": resetToken, // frontend must keep this
+		"token": resetToken, // frontend must keep this
 	})
 }
 
@@ -151,7 +153,7 @@ func (h *PasswordResetHandler) SubmitNewPassword(c *gin.Context) {
 	var request struct {
 		Email       string `json:"email" binding:"required,email"`
 		NewPassword string `json:"new_password" binding:"required,min=8"`
-		ResetToken  string `json:"reset_token" binding:"required"`
+		ResetToken  string `json:"token" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -164,7 +166,7 @@ func (h *PasswordResetHandler) SubmitNewPassword(c *gin.Context) {
 	var expiresAt time.Time
 	err := h.DB.QueryRow(`
 		SELECT user_id, expires_at FROM password_resets
-		WHERE reset_token = ? AND used = FALSE
+		WHERE token = ? AND used = FALSE
 	`, request.ResetToken).Scan(&userID, &expiresAt)
 
 	if err != nil || time.Now().After(expiresAt) {
@@ -187,7 +189,7 @@ func (h *PasswordResetHandler) SubmitNewPassword(c *gin.Context) {
 	}
 
 	// Mark token as used
-	_, _ = h.DB.Exec("UPDATE password_resets SET used = TRUE WHERE reset_token = ?", request.ResetToken)
+	_, _ = h.DB.Exec("UPDATE password_resets SET used = TRUE WHERE token = ?", request.ResetToken)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
 }
